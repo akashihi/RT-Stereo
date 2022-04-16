@@ -1,0 +1,65 @@
+diff --git a/models/gwcnet.py b/models/gwcnet.py
+index adc4f29..4e548a3 100644
+--- a/models/gwcnet.py
++++ b/models/gwcnet.py
+@@ -81,11 +81,11 @@ class hourglass(nn.Module):
+                                    nn.ReLU(inplace=True))
+ 
+         self.conv5 = nn.Sequential(
+-            nn.ConvTranspose3d(in_channels * 4, in_channels * 2, 3, padding=1, output_padding=1, stride=2, bias=False),
++            nn.ConvTranspose3d(in_channels * 4, in_channels * 2, 3, padding=0, output_padding=0, stride=2, bias=False),
+             nn.BatchNorm3d(in_channels * 2))
+ 
+         self.conv6 = nn.Sequential(
+-            nn.ConvTranspose3d(in_channels * 2, in_channels, 3, padding=1, output_padding=1, stride=2, bias=False),
++            nn.ConvTranspose3d(in_channels * 2, in_channels, 3, padding=0, output_padding=0, stride=2, bias=False),
+             nn.BatchNorm3d(in_channels))
+ 
+         self.redir1 = convbn_3d(in_channels, in_channels, kernel_size=1, stride=1, pad=0)
+@@ -98,8 +98,12 @@ class hourglass(nn.Module):
+         conv3 = self.conv3(conv2)
+         conv4 = self.conv4(conv3)
+ 
+-        conv5 = F.relu(self.conv5(conv4) + self.redir2(conv2), inplace=True)
+-        conv6 = F.relu(self.conv6(conv5) + self.redir1(x), inplace=True)
++        conv5 = self.conv5(conv4)
++        conv5 = conv5[:, :, :-1, :-1, :-1]
++        conv5 = F.relu(conv5 + self.redir2(conv2), inplace=True)
++        conv6 = self.conv6(conv5)
++        conv6 = conv6[:, :, :-1, :-1, :-1]
++        conv6 = F.relu(conv6 + self.redir1(x), inplace=True)
+ 
+         return conv6
+ 
+@@ -217,7 +221,7 @@ class GwcNet(nn.Module):
+         else:
+             cost3 = self.classif3(out3)
+             cost3 = F.upsample(cost3, [self.maxdisp, left.size()[2], left.size()[3]], mode='trilinear')
+-            cost3 = torch.squeeze(cost3, 1)
++            cost3 = cost3[:, 0, : , :]
+             pred3 = F.softmax(cost3, dim=1)
+             pred3 = disparity_regression(pred3, self.maxdisp)
+             return [pred3]
+diff --git a/models/submodule.py b/models/submodule.py
+index a4618c4..4307c35 100644
+--- a/models/submodule.py
++++ b/models/submodule.py
+@@ -21,7 +21,6 @@ def convbn_3d(in_channels, out_channels, kernel_size, stride, pad):
+ 
+ 
+ def disparity_regression(x, maxdisp):
+-    assert len(x.shape) == 4
+     disp_values = torch.arange(0, maxdisp, dtype=x.dtype, device=x.device)
+     disp_values = disp_values.view(1, maxdisp, 1, 1)
+     return torch.sum(x * disp_values, 1, keepdim=False)
+@@ -43,10 +42,8 @@ def build_concat_volume(refimg_fea, targetimg_fea, maxdisp):
+ 
+ def groupwise_correlation(fea1, fea2, num_groups):
+     B, C, H, W = fea1.shape
+-    assert C % num_groups == 0
+     channels_per_group = C // num_groups
+     cost = (fea1 * fea2).view([B, num_groups, channels_per_group, H, W]).mean(dim=2)
+-    assert cost.shape == (B, num_groups, H, W)
+     return cost
+ 
+ 
