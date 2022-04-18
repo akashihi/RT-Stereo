@@ -142,8 +142,9 @@ disparity resolution are fixed in the ONNX model.
 * Cleanup the model with `polygraphy`
 * Convert ONNX model to the _external_ ONNX model
 
-In ase you would like to skip the step, feel free to use the pre-converted
-ONNX model, with 192 disparity levels and 672x480 pixels image resolution.
+In ase you would like to skip the step, feel free to use the [pre-converted
+ONNX model](https://mega.nz/file/xR9wESgI#Hs0Sdct22YpYWE8grU2EnjWHpeMB_woTrp0x1mdL7X8), 
+with 192 disparity levels and 672x480 pixels image resolution.
 
 #### GwcNet preparation
 
