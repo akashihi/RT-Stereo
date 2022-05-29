@@ -2,6 +2,8 @@
 
 # Real-Time Deep Learning Based Stereo Reconstruction
 
+![Disparity demo](demo_image.gif "Comparison of different disparity estimation methods")
+
 This repository contains the code for Msc Thesis paper "Real-time Deep-learning based Stereo Reconstruction",
 in which a portable stereo reconstruction solution is built. 
 
